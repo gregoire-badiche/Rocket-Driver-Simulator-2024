@@ -3,6 +3,7 @@
 import pygame
 import math
 from random import randint
+import textures
 
 G:int = 1000000
 
@@ -115,16 +116,17 @@ class CelestialBody(Sprite):
 class Planet(CelestialBody):
     def __init__(self, chunk: Chunk, x, y, radius) -> None:
         super().__init__(chunk, x, y, radius, radius)
+        self.planet_texture=textures.Planet_texture(self.radius).texture
         return
     
     def draw(self, x, y, *args) -> None:
-        pygame.draw.circle(screen, "lightblue", (CENTERX + self.x - x, CENTERY + self.y - y), self.radius)
+        screen.blit(self.planet_texture, (CENTERX + self.x - x - self.radius, CENTERY + self.y - y - self.radius))
         return
 
 class BlackHole(CelestialBody):
     def __init__(self, chunk: Chunk, x, y, radius, mass) -> None:
         super().__init__(chunk, x, y, radius, mass)
-    
+        
     def draw(self, x, y, *args) -> None:
         pygame.draw.circle(screen, "black", (CENTERX + self.x - x, CENTERY + self.y - y), self.radius)
         return
