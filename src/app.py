@@ -3,9 +3,12 @@
 import pygame
 import math
 from random import randint
-import textures
+from os import listdir
+from os.path import isfile, join
 
 G:int = 1000000
+planet = ("src/textures/Planets/",[files for files in listdir("src/textures/Planets/") if isfile(join("src/textures/Planets/", files))])
+black_hole=("src/textures/Blackhole/",[files for files in listdir("src/textures/Blackhole/") if isfile(join("src/textures/Blackhole/", files))])
 
 pygame.init()
 screen = pygame.display.set_mode((1280, 720))
@@ -116,19 +119,24 @@ class CelestialBody(Sprite):
 class Planet(CelestialBody):
     def __init__(self, chunk: Chunk, x, y, radius) -> None:
         super().__init__(chunk, x, y, radius, radius)
-        self.planet_texture=textures.Planet_texture(self.radius).texture
+        directory=join(planet[0], planet[1][randint(0,len(planet[1])-1)])
+        self.texture=pygame.image.load(directory)
+        self.texture = pygame.transform.scale(self.texture, (radius*2, radius*2))
         return
     
     def draw(self, x, y, *args) -> None:
-        screen.blit(self.planet_texture, (CENTERX + self.x - x - self.radius, CENTERY + self.y - y - self.radius))
+        screen.blit(self.texture, (CENTERX + self.x - x - self.radius, CENTERY + self.y - y - self.radius))
         return
 
 class BlackHole(CelestialBody):
     def __init__(self, chunk: Chunk, x, y, radius, mass) -> None:
         super().__init__(chunk, x, y, radius, mass)
+        directory=join(black_hole[0], black_hole[1][randint(0,len(black_hole[1])-1)])
+        self.texture=pygame.image.load(directory)
+        self.texture = pygame.transform.scale(self.texture, (radius*2, radius*2))
         
     def draw(self, x, y, *args) -> None:
-        pygame.draw.circle(screen, "black", (CENTERX + self.x - x, CENTERY + self.y - y), self.radius)
+        screen.blit(self.texture, (CENTERX + self.x - x - self.radius, CENTERY + self.y - y - self.radius))
         return
 
 class BackgroundStar(Sprite):
@@ -184,7 +192,7 @@ pl = Planet(ch, 400, 400, 30)
 pl2 = Planet(ch, 600, 300, 15)
 pl3 = Planet(ch, 1000, 600, 25)
 pl4 = Planet(ch, 700, 200, 20)
-bh = BlackHole(ch, 2000, 2000, 10, 300)
+bh = BlackHole(ch, 2000, 2000, 75, 300)
 
 for i in range(100):
     x = BackgroundStar(ch, 0, 0)
