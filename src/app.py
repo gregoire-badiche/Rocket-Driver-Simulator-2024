@@ -72,12 +72,19 @@ class MainCharacter(Sprite):
         self.drawy = y
         self.angle = 0
         self.rotation = 0
+        self.texture_forward=pygame.image.load("src/textures/Rocket/player.png")
+        self.texture_right=pygame.image.load("src/textures/Rocket/player_right.png")
+        self.texture_left=pygame.image.load("src/textures/Rocket/player_left.png")
+        self.texture=self.texture_forward
         return
     
     def update(self, dt) -> None:
         self.x += self.speedx * dt
         self.y += self.speedy * dt
         self.angle += self.rotation * dt
+        self.texture_forward=pygame.transform.rotate(pygame.image.load("src/textures/Rocket/player.png"), -math.degrees(self.angle)) 
+        self.texture_right=pygame.transform.rotate(pygame.image.load("src/textures/Rocket/player_right.png"), -math.degrees(self.angle))
+        self.texture_left=pygame.transform.rotate(pygame.image.load("src/textures/Rocket/player_left.png"), -math.degrees(self.angle))
         print('\033[3J')
         print(f"x: {int(self.x)}, y: {int(self.y)}")
         print(f"speed: {int(math.sqrt(self.speedx ** 2 + self.speedy ** 2))}")
@@ -88,10 +95,7 @@ class MainCharacter(Sprite):
         return
     
     def draw(self, *args) -> None:
-        p1 = (CENTERX + (10 * math.cos(self.angle)), CENTERY + (10 * math.sin(self.angle)))
-        p2 = (CENTERX + (5 * math.cos(self.angle + (2 * math.pi / 3))), CENTERY + (5 * math.sin(self.angle + (2 * math.pi / 3))))
-        p3 = (CENTERX + (5 * math.cos(self.angle + (4 * math.pi / 3))), CENTERY + (5 * math.sin(self.angle + (4 * math.pi / 3))))
-        pygame.draw.polygon(screen, "white", (p1, p2, p3))
+        screen.blit(self.texture, (CENTERX, CENTERY))
         return
 
 
@@ -214,11 +218,22 @@ while running:
         momentumx += math.cos(sp.angle)
     if keys[pygame.K_q]:
         sp.rotation -= 100 * dt
+        sp.texture=sp.texture_left
+        move=False
+    else:
+        sp.texture=sp.texture_forward
+        move=True
     if keys[pygame.K_d]:
         sp.rotation += 100 * dt
+        sp.texture=sp.texture_right
+    elif move:
+        sp.texture=sp.texture_forward
+
+        
+    print(sp.rotation)
 
     sp.speedx += momentumx * 800 * dt
-    sp.speedy += momentumy * 800 *dt
+    sp.speedy += momentumy * 800 * dt
     
     ch2.update(dt)
     ch.update(dt, sp)
