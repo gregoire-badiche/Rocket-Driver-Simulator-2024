@@ -5,7 +5,7 @@ import math
 from random import randint
 import textures
 
-G:int = 1000
+G:int = 10
 
 pygame.init()
 screen = pygame.display.set_mode((1280, 720))
@@ -84,15 +84,15 @@ class MainCharacter(Sprite):
         if(self.isboosting):
             self.timeboosting += dt
             n = 0
-            if(self.timeboosting > .001):
-                n = self.timeboosting // .001
+            if(self.timeboosting > 1):
+                n = self.timeboosting // 1
                 self.timeboosting = 0
             for i in range(int(n)):
                 x = randint(0, 2)
                 if(x == 0):
                     radius = randint(2, 3)
-                    timeout = randint(500, 1000) / 1000
-                    speed = randint(400, 800)
+                    timeout = randint(500, 750)
+                    speed = randint(400, 800) / 1000
                     velocity = {
                         "x": (speed * math.cos(self.angle + math.pi)) + self.speedx,
                         "y": (speed * math.sin(self.angle + math.pi)) + self.speedy
@@ -100,8 +100,8 @@ class MainCharacter(Sprite):
                     color = "yellow"
                 elif(x == 1):
                     radius = randint(4, 5)
-                    timeout = randint(250, 500) / 1000
-                    speed = randint(400, 800)
+                    timeout = randint(250, 500)
+                    speed = randint(400, 800) / 1000
                     velocity = {
                         "x": (speed * math.cos(self.angle + math.pi)) + self.speedx,
                         "y": (speed * math.sin(self.angle + math.pi)) + self.speedy
@@ -109,8 +109,8 @@ class MainCharacter(Sprite):
                     color = "darkorange"
                 else:
                     radius = 6
-                    timeout = randint(50, 250) / 1000
-                    speed = randint(400, 800)
+                    timeout = randint(50, 250)
+                    speed = randint(400, 800) / 1000
                     velocity = {
                         "x": (speed * math.cos(self.angle + math.pi)) + self.speedx,
                         "y": (speed * math.sin(self.angle + math.pi)) + self.speedy
@@ -118,9 +118,9 @@ class MainCharacter(Sprite):
                     color = "red"
                 Particle(self.particlechunk, CENTERX + self.x, CENTERY + self.y, radius, color, velocity, timeout)
 
-        # print('\033[3J')
-        # print(f"x: {int(self.x)}, y: {int(self.y)}")
-        # print(f"speed: {int(math.sqrt(self.speedx ** 2 + self.speedy ** 2))}")
+        print('\033[3J')
+        print(f"x: {int(self.x)}, y: {int(self.y)}")
+        print(f"speed: {int(math.sqrt(self.speedx ** 2 + self.speedy ** 2) * 1000)}")
         return
     
     def draw(self, x, y, *args) -> None:
@@ -170,14 +170,14 @@ class CelestialBody(Sprite):
             unitx = x / dist
             unity = y / dist
             force = G * m2 / (x ** 2 + y ** 2)
-            if(force < 10):
+            if(force < .001):
                 return
-            sprite.speedx += unitx * force * dt
-            sprite.speedy += unity * force * dt
+            sprite.speedx += unitx * force * dt / 10000
+            sprite.speedy += unity * force * dt / 10000
 
 class Planet(CelestialBody):
     def __init__(self, chunk: Chunk, x, y, radius) -> None:
-        super().__init__(chunk, x, y, radius, radius ** 3)
+        super().__init__(chunk, x, y, radius, radius ** 2)
         self.planet_texture=textures.Planet_texture(self.radius).texture
         return
     
@@ -238,19 +238,19 @@ class BackgroundStar(Sprite):
         return
     
 
-
 ch = Chunk(0, 0)
 ch2 = Chunk(0, 1)
-sp = MainCharacter(ch2, screen.get_width() / 2, screen.get_height() / 2)
-# pl = Planet(ch, 400, 400, 30)
-# pl2 = Planet(ch, 600, 300, 15)
-# pl3 = Planet(ch, 1000, 600, 25)
-# pl4 = Planet(ch, 700, 200, 20)
-# pl5 = Planet(ch, 900, 900, 100)
-# bh = BlackHole(ch, 2000, 2000, 10, 300000)
 
 for i in range(100):
     x = BackgroundStar(ch, 0, 0)
+
+sp = MainCharacter(ch2, screen.get_width() / 2, screen.get_height() / 2)
+pl = Planet(ch, 4000, 4000, 300)
+pl2 = Planet(ch, 3000, 300, 150)
+pl3 = Planet(ch, 1000, 600, 250)
+pl4 = Planet(ch, 700, 2500, 200)
+pl5 = Planet(ch, 2000, 900, 100)
+# bh = BlackHole(ch, 2000, 2000, 10, 3000)
 
 while running:
     # poll for events
@@ -269,12 +269,12 @@ while running:
     else:
         sp.isboosting = False
     if keys[pygame.K_q]:
-        sp.rotation -= 100 * dt
+        sp.rotation -= .00001 * dt
     if keys[pygame.K_d]:
-        sp.rotation += 100 * dt
+        sp.rotation += .00001 * dt
 
-    sp.speedx += momentumx * 800 * dt
-    sp.speedy += momentumy * 800 * dt
+    sp.speedx += momentumx * dt * .0001
+    sp.speedy += momentumy * dt * .0001
 
     ch2.update(dt)
     ch.update(dt, sp)
@@ -290,4 +290,4 @@ while running:
     # limits FPS to 60
     # dt is delta time in seconds since last frame, used for framerate-
     # independent physics.
-    dt = clock.tick(120) / 5000
+    dt = clock.tick(120)
