@@ -7,8 +7,8 @@ from os import listdir
 from os.path import isfile, join
 
 G:int = 1000000
-planet = ("src/textures/Planets/",[files for files in listdir("src/textures/Planets/") if isfile(join("src/textures/Planets/", files))])
-black_hole=("src/textures/Blackhole/",[files for files in listdir("src/textures/Blackhole/") if isfile(join("src/textures/Blackhole/", files))])
+planet = [join("src/textures/Planets/",files) for files in listdir("src/textures/Planets/") if isfile(join("src/textures/Planets/", files))]
+black_hole=[join("src/textures/Blackhole/",files) for files in listdir("src/textures/Blackhole/") if isfile(join("src/textures/Blackhole/", files))]
 
 pygame.init()
 screen = pygame.display.set_mode((1280, 720))
@@ -119,8 +119,10 @@ class CelestialBody(Sprite):
 class Planet(CelestialBody):
     def __init__(self, chunk: Chunk, x, y, radius) -> None:
         super().__init__(chunk, x, y, radius, radius)
-        directory=join(planet[0], planet[1][randint(0,len(planet[1])-1)])
-        self.texture=pygame.image.load(directory)
+        randnum=randint(0,len(planet)-1)
+        self.directory=planet[randnum]
+        del planet[randnum]
+        self.texture=pygame.image.load(self.directory)
         self.texture = pygame.transform.scale(self.texture, (radius*2, radius*2))
         return
     
@@ -131,8 +133,8 @@ class Planet(CelestialBody):
 class BlackHole(CelestialBody):
     def __init__(self, chunk: Chunk, x, y, radius, mass) -> None:
         super().__init__(chunk, x, y, radius, mass)
-        directory=join(black_hole[0], black_hole[1][randint(0,len(black_hole[1])-1)])
-        self.texture=pygame.image.load(directory)
+        self.directory=black_hole[randint(0,len(black_hole)-1)]
+        self.texture=pygame.image.load(self.directory)
         self.texture = pygame.transform.scale(self.texture, (radius*2, radius*2))
         
     def draw(self, x, y, *args) -> None:
