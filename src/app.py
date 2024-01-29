@@ -116,11 +116,11 @@ class MainCharacter(Sprite):
                         "y": (speed * math.sin(self.angle + math.pi)) + self.speedy
                     }
                     color = "red"
-                Particle(self.particlechunk, CENTERX + self.x, CENTERY + self.y, radius, color, velocity, timeout)
+                Particle(self.particlechunk, self.x, self.y, radius, color, velocity, timeout)
 
-        print('\033[3J')
-        print(f"x: {int(self.x)}, y: {int(self.y)}")
-        print(f"speed: {int(math.sqrt(self.speedx ** 2 + self.speedy ** 2) * 1000)}")
+        # print('\033[3J')
+        # print(f"x: {int(self.x)}, y: {int(self.y)}")
+        # print(f"speed: {int(math.sqrt(self.speedx ** 2 + self.speedy ** 2) * 1000)}")
         return
     
     def draw(self, x, y, *args) -> None:
@@ -136,7 +136,8 @@ class Particle(Sprite):
         super().__init__(chunk, x, y)
         self.timeout = timeout
         self.timelived = 0
-        self.velocity = velocity
+        self.speedx = velocity["x"]
+        self.speedy = velocity["y"]
         self.color = color
         self.radius = radius
         self.ogradius = radius
@@ -146,12 +147,12 @@ class Particle(Sprite):
         self.radius = self.ogradius * (self.timeout - self.timelived) / self.timeout
         if(self.timelived > self.timeout):
             self.kill()
-        self.x += self.velocity["x"] * delta
-        self.y += self.velocity["y"] * delta
+        self.x += self.speedx * delta
+        self.y += self.speedy * delta
         return
     
     def draw(self, x, y):
-        pygame.draw.circle(screen, self.color, (self.x - x, self.y - y), self.radius)
+        pygame.draw.circle(screen, self.color, (CENTERX + self.x - x, CENTERY + self.y - y), self.radius)
         return
 
 class CelestialBody(Sprite):
@@ -161,19 +162,24 @@ class CelestialBody(Sprite):
         self.mass = mass
         return
 
-    def update(self, dt, sprite:MainCharacter):
-        x = self.x - sprite.x
-        y = self.y - sprite.y
-        m2 = self.mass
-        dist = math.sqrt(x ** 2 + y ** 2)
-        if(dist > self.radius + 5):
-            unitx = x / dist
-            unity = y / dist
-            force = G * m2 / (x ** 2 + y ** 2)
-            if(force < .001):
-                return
-            sprite.speedx += unitx * force * dt / 10000
-            sprite.speedy += unity * force * dt / 10000
+    def update(self, dt, sprite:Sprite|list[Sprite]):
+        if(isinstance(sprite, Sprite)):
+            spt = [sprite]
+        else:
+            spt = sprite
+        for sp in spt:
+            x = self.x - sp.x
+            y = self.y - sp.y
+            m2 = self.mass
+            dist = math.sqrt(x ** 2 + y ** 2)
+            if(dist > self.radius + 5):
+                unitx = x / dist
+                unity = y / dist
+                force = G * m2 / (x ** 2 + y ** 2)
+                if(force < .001):
+                    return
+                sp.speedx += unitx * force * dt / 10000
+                sp.speedy += unity * force * dt / 10000
 
 class Planet(CelestialBody):
     def __init__(self, chunk: Chunk, x, y, radius) -> None:
@@ -240,9 +246,10 @@ class BackgroundStar(Sprite):
 
 ch = Chunk(0, 0)
 ch2 = Chunk(0, 1)
-
+stars = []
 for i in range(100):
     x = BackgroundStar(ch, 0, 0)
+    stars.append(x)
 
 sp = MainCharacter(ch2, screen.get_width() / 2, screen.get_height() / 2)
 pl = Planet(ch, 4000, 4000, 300)
@@ -269,15 +276,15 @@ while running:
     else:
         sp.isboosting = False
     if keys[pygame.K_q]:
-        sp.rotation -= .00001 * dt
+        sp.rotation -= .000005 * dt
     if keys[pygame.K_d]:
-        sp.rotation += .00001 * dt
+        sp.rotation += .000005 * dt
 
     sp.speedx += momentumx * dt * .0001
     sp.speedy += momentumy * dt * .0001
 
     ch2.update(dt)
-    ch.update(dt, sp)
+    ch.update(dt, sp.particlechunk.sprites + [sp])
 
     # fill the screen with a color to wipe away anything from last frame
     screen.fill((0, 0, 50))
