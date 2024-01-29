@@ -5,7 +5,7 @@ import math
 from random import randint
 import textures
 
-G:int = 1000000
+G:int = 1000
 
 pygame.init()
 screen = pygame.display.set_mode((1280, 720))
@@ -52,7 +52,7 @@ class Sprite:
         return
 
     def kill(self) -> None:
-        del self.chunk.sprites[self.chunkindex]
+        self.chunk.sprites.remove(self)
         return
     
     def draw(self, *args):
@@ -69,28 +69,90 @@ class MainCharacter(Sprite):
         self.drawy = y
         self.angle = 0
         self.rotation = 0
+        self.isboosting = False
+        self.timeboosting = 0
+        self.particlechunk = Chunk(0, 0)
         return
     
     def update(self, dt) -> None:
+        self.particlechunk.update(dt)
+
         self.x += self.speedx * dt
         self.y += self.speedy * dt
         self.angle += self.rotation * dt
-        print('\033[3J')
-        print(f"x: {int(self.x)}, y: {int(self.y)}")
-        print(f"speed: {int(math.sqrt(self.speedx ** 2 + self.speedy ** 2))}")
-        # if(self.x < 0 or self.x > screen.get_width()):
-        #     self.speedx = -1 * self.speedx
-        # if(self.y < 0 or self.y > screen.get_height()):
-        #     self.speedy = -1 * self.speedy
+
+        if(self.isboosting):
+            self.timeboosting += dt
+            n = 0
+            if(self.timeboosting > .001):
+                n = self.timeboosting // .001
+                self.timeboosting = 0
+            for i in range(int(n)):
+                x = randint(0, 2)
+                if(x == 0):
+                    radius = randint(2, 3)
+                    timeout = randint(500, 1000) / 1000
+                    speed = randint(400, 800)
+                    velocity = {
+                        "x": (speed * math.cos(self.angle + math.pi)) + self.speedx,
+                        "y": (speed * math.sin(self.angle + math.pi)) + self.speedy
+                    }
+                    color = "yellow"
+                elif(x == 1):
+                    radius = randint(4, 5)
+                    timeout = randint(250, 500) / 1000
+                    speed = randint(400, 800)
+                    velocity = {
+                        "x": (speed * math.cos(self.angle + math.pi)) + self.speedx,
+                        "y": (speed * math.sin(self.angle + math.pi)) + self.speedy
+                    }
+                    color = "darkorange"
+                else:
+                    radius = 6
+                    timeout = randint(50, 250) / 1000
+                    speed = randint(400, 800)
+                    velocity = {
+                        "x": (speed * math.cos(self.angle + math.pi)) + self.speedx,
+                        "y": (speed * math.sin(self.angle + math.pi)) + self.speedy
+                    }
+                    color = "red"
+                Particle(self.particlechunk, CENTERX + self.x, CENTERY + self.y, radius, color, velocity, timeout)
+
+        # print('\033[3J')
+        # print(f"x: {int(self.x)}, y: {int(self.y)}")
+        # print(f"speed: {int(math.sqrt(self.speedx ** 2 + self.speedy ** 2))}")
         return
     
-    def draw(self, *args) -> None:
-        p1 = (CENTERX + (10 * math.cos(self.angle)), CENTERY + (10 * math.sin(self.angle)))
-        p2 = (CENTERX + (5 * math.cos(self.angle + (2 * math.pi / 3))), CENTERY + (5 * math.sin(self.angle + (2 * math.pi / 3))))
-        p3 = (CENTERX + (5 * math.cos(self.angle + (4 * math.pi / 3))), CENTERY + (5 * math.sin(self.angle + (4 * math.pi / 3))))
+    def draw(self, x, y, *args) -> None:
+        self.particlechunk.draw(x, y)
+        p1 = (CENTERX + (20 * math.cos(self.angle)), CENTERY + (20 * math.sin(self.angle)))
+        p2 = (CENTERX + (10 * math.cos(self.angle + (2 * math.pi / 3))), CENTERY + (10 * math.sin(self.angle + (2 * math.pi / 3))))
+        p3 = (CENTERX + (10 * math.cos(self.angle + (4 * math.pi / 3))), CENTERY + (10 * math.sin(self.angle + (4 * math.pi / 3))))
         pygame.draw.polygon(screen, "white", (p1, p2, p3))
         return
 
+class Particle(Sprite):
+    def __init__(self, chunk: Chunk, x, y, radius, color, velocity, timeout) -> None:
+        super().__init__(chunk, x, y)
+        self.timeout = timeout
+        self.timelived = 0
+        self.velocity = velocity
+        self.color = color
+        self.radius = radius
+        self.ogradius = radius
+    
+    def update(self, delta, *args):
+        self.timelived += delta
+        self.radius = self.ogradius * (self.timeout - self.timelived) / self.timeout
+        if(self.timelived > self.timeout):
+            self.kill()
+        self.x += self.velocity["x"] * delta
+        self.y += self.velocity["y"] * delta
+        return
+    
+    def draw(self, x, y):
+        pygame.draw.circle(screen, self.color, (self.x - x, self.y - y), self.radius)
+        return
 
 class CelestialBody(Sprite):
     def __init__(self, chunk: Chunk, x, y, radius, mass) -> None:
@@ -115,7 +177,7 @@ class CelestialBody(Sprite):
 
 class Planet(CelestialBody):
     def __init__(self, chunk: Chunk, x, y, radius) -> None:
-        super().__init__(chunk, x, y, radius, radius)
+        super().__init__(chunk, x, y, radius, radius ** 3)
         self.planet_texture=textures.Planet_texture(self.radius).texture
         return
     
@@ -180,11 +242,12 @@ class BackgroundStar(Sprite):
 ch = Chunk(0, 0)
 ch2 = Chunk(0, 1)
 sp = MainCharacter(ch2, screen.get_width() / 2, screen.get_height() / 2)
-pl = Planet(ch, 400, 400, 30)
-pl2 = Planet(ch, 600, 300, 15)
-pl3 = Planet(ch, 1000, 600, 25)
-pl4 = Planet(ch, 700, 200, 20)
-bh = BlackHole(ch, 2000, 2000, 10, 300)
+# pl = Planet(ch, 400, 400, 30)
+# pl2 = Planet(ch, 600, 300, 15)
+# pl3 = Planet(ch, 1000, 600, 25)
+# pl4 = Planet(ch, 700, 200, 20)
+# pl5 = Planet(ch, 900, 900, 100)
+# bh = BlackHole(ch, 2000, 2000, 10, 300000)
 
 for i in range(100):
     x = BackgroundStar(ch, 0, 0)
@@ -199,17 +262,20 @@ while running:
     momentumx = 0
     momentumy = 0
     keys = pygame.key.get_pressed()
-    if keys[pygame.K_SPACE] or keys[pygame.K_s]:
+    if keys[pygame.K_SPACE] or keys[pygame.K_z]:
         momentumy += math.sin(sp.angle)
         momentumx += math.cos(sp.angle)
+        sp.isboosting = True
+    else:
+        sp.isboosting = False
     if keys[pygame.K_q]:
         sp.rotation -= 100 * dt
     if keys[pygame.K_d]:
         sp.rotation += 100 * dt
 
     sp.speedx += momentumx * 800 * dt
-    sp.speedy += momentumy * 800 *dt
-    
+    sp.speedy += momentumy * 800 * dt
+
     ch2.update(dt)
     ch.update(dt, sp)
 
@@ -217,7 +283,7 @@ while running:
     screen.fill((0, 0, 50))
 
     ch.draw(sp.x, sp.y)
-    ch2.draw(0, 0)
+    ch2.draw(sp.x, sp.y)
 
     pygame.display.flip()
 
